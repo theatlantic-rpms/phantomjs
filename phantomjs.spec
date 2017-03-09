@@ -11,9 +11,10 @@ URL:        http://phantomjs.org/
 Packager:   Frankie Dintino <fdintino@theatlantic.com>
 
 Source0:    https://github.com/nkovacs/selenium-standalone-phantomjs/raw/62f2a2a56ddbce1c13218aabe60f516afdeffdd8/phantomjs
-Source1:    LICENSE.BSD
-Source2:    README.md
-Source3:    ChangeLog
+Source1:    README.md
+Source2:    ChangeLog
+Source3:    LICENSE.BSD
+Source4:    third-party.txt
 
 Requires:   fontconfig
 
@@ -29,13 +30,15 @@ Canvas, and SVG. PhantomJS is created by Ariya Hidayat.
 install -p -d -m 0755 %{buildroot}%{_bindir}
 install -p -m 0755 %{SOURCE0} %{buildroot}%{_bindir}/phantomjs
 install -p -d -m 0755 %{buildroot}%{_pkgdocdir}
-install -p -m 0644 -t %{buildroot}%{_pkgdocdir} %{SOURCE1} %{SOURCE2} %{SOURCE3}
+install -p -m 0644 -t %{buildroot}%{_pkgdocdir} %{SOURCE1} %{SOURCE2}
+install -p -m 0644 %{SOURCE3} LICENSE
+install -p -m 0644 %{SOURCE4} third-party.txt
 
 %files
 %doc %dir %{_pkgdocdir}
 %doc %{_pkgdocdir}/ChangeLog
 %doc %{_pkgdocdir}/README.md
-%license %{_pkgdocdir}/LICENSE.BSD
+%license LICENSE third-party.txt
 %{_bindir}/phantomjs
 
 %changelog
