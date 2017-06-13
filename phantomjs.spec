@@ -1,5 +1,3 @@
-%{!?_pkgdocdir: %global _pkgdocdir %{_docdir}/%{name}-%{version}}
-
 Name:       phantomjs
 Version:    2.1.1
 Release:    2%{?dist}
@@ -29,15 +27,13 @@ Canvas, and SVG. PhantomJS is created by Ariya Hidayat.
 %install
 install -p -d -m 0755 %{buildroot}%{_bindir}
 install -p -m 0755 %{SOURCE0} %{buildroot}%{_bindir}/phantomjs
-install -p -d -m 0755 %{buildroot}%{_pkgdocdir}
-install -p -m 0644 -t %{buildroot}%{_pkgdocdir} %{SOURCE1} %{SOURCE2}
+install -p -m 0644 %{SOURCE1} README.md
+install -p -m 0644 %{SOURCE2} ChangeLog
 install -p -m 0644 %{SOURCE3} LICENSE
 install -p -m 0644 %{SOURCE4} third-party.txt
 
 %files
-%doc %dir %{_pkgdocdir}
-%doc %{_pkgdocdir}/ChangeLog
-%doc %{_pkgdocdir}/README.md
+%doc ChangeLog README.md
 %license LICENSE third-party.txt
 %{_bindir}/phantomjs
 
