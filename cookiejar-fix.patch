@@ -1,0 +1,128 @@
+From d0388371cfda166d97165c1b68182857b954cc83 Mon Sep 17 00:00:00 2001
+From: vitallium <vitaliy.slobodin@gmail.com>
+Date: Mon, 7 Mar 2016 17:53:30 +0300
+Subject: [PATCH] Add/Remove CookieJar methods must return value
+
+Consider CookierJar return a boolean value on
+addCookie or removeCookie methods.
+
+Issue: #14047
+---
+ src/cookiejar.cpp                  | 22 ++++++++++++++--------
+ src/cookiejar.h                    |  2 +-
+ test/module/cookiejar/cookiejar.js | 12 ++++++++----
+ 3 files changed, 23 insertions(+), 13 deletions(-)
+
+diff --git a/src/cookiejar.cpp b/src/cookiejar.cpp
+index 371d7c565..7b6874a0c 100644
+--- a/src/cookiejar.cpp
++++ b/src/cookiejar.cpp
+@@ -107,13 +107,14 @@ CookieJar::~CookieJar()
+ 
+ bool CookieJar::setCookiesFromUrl(const QList<QNetworkCookie>& cookieList, const QUrl& url)
+ {
++    bool isCookieAdded = false;
+     // Update cookies in memory
+     if (isEnabled()) {
+-        QNetworkCookieJar::setCookiesFromUrl(cookieList, url);
++        isCookieAdded = QNetworkCookieJar::setCookiesFromUrl(cookieList, url);
+         save();
+     }
+     // No changes occurred
+-    return false;
++    return isCookieAdded;
+ }
+ 
+ QList<QNetworkCookie> CookieJar::cookiesForUrl(const QUrl& url) const
+@@ -127,9 +128,10 @@ QList<QNetworkCookie> CookieJar::cookiesForUrl(const QUrl& url) const
+ 
+ bool CookieJar::addCookie(const QNetworkCookie& cookie, const QString& url)
+ {
++    bool isCookieAdded = false;
+     if (isEnabled() && (!url.isEmpty() || !cookie.domain().isEmpty())) {
+         // Save a single cookie
+-        setCookiesFromUrl(
++        isCookieAdded = setCookiesFromUrl(
+             QList<QNetworkCookie>() << cookie, //< unfortunately, "setCookiesFromUrl" requires a list
+             !url.isEmpty() ?
+             url :           //< use given URL
+@@ -140,17 +142,19 @@ bool CookieJar::addCookie(const QNetworkCookie& cookie, const QString& url)
+ 
+         // Return "true" if the cookie was really set
+         if (contains(cookie)) {
+-            return true;
++            isCookieAdded = true;
+         }
++    }
++
++    if (!isCookieAdded) {
+         qDebug() << "CookieJar - Rejected Cookie" << cookie.toRawForm();
+-        return false;
+     }
+-    return false;
++    return isCookieAdded;
+ }
+ 
+-void CookieJar::addCookie(const QVariantMap& cookie)
++bool CookieJar::addCookie(const QVariantMap& cookie)
+ {
+-    addCookieFromMap(cookie);
++    return addCookieFromMap(cookie);
+ }
+ 
+ bool CookieJar::addCookieFromMap(const QVariantMap& cookie, const QString& url)
+@@ -206,6 +210,8 @@ bool CookieJar::addCookieFromMap(const QVariantMap& cookie, const QString& url)
+ 
+         return addCookie(newCookie, url);
+     }
++
++    qDebug() << "Cookie must have name and value";
+     return false;
+ }
+ 
+diff --git a/src/cookiejar.h b/src/cookiejar.h
+index 1ced25a05..15c46305f 100644
+--- a/src/cookiejar.h
++++ b/src/cookiejar.h
+@@ -65,7 +65,7 @@ class CookieJar: public QNetworkCookieJar
+     bool isEnabled() const;
+ 
+ public slots:
+-    void addCookie(const QVariantMap& cookie);
++    bool addCookie(const QVariantMap& cookie);
+     bool addCookieFromMap(const QVariantMap& cookie, const QString& url = QString());
+     bool addCookiesFromMap(const QVariantList& cookiesList, const QString& url = QString());
+     QVariantList cookiesToMap(const QString& url = QString()) const;
+diff --git a/test/module/cookiejar/cookiejar.js b/test/module/cookiejar/cookiejar.js
+index 611d55495..73befc2b7 100644
+--- a/test/module/cookiejar/cookiejar.js
++++ b/test/module/cookiejar/cookiejar.js
+@@ -59,7 +59,8 @@ test(function () {
+ test(function () {
+     assert_equals(jar1.cookies.length, 0);
+ 
+-    jar1.addCookie(cookie0);
++    var isAdded = jar1.addCookie(cookie0);
++    assert_equals(isAdded, true);
+     assert_equals(jar1.cookies.length, 1);
+ 
+     jar1.deleteCookie('Valid-Cookie-Name');
+@@ -77,12 +78,15 @@ test(function () {
+ }, "setting and clearing a cookie jar");
+ 
+ test(function () {
+-    jar1.addCookie(cookie1);
++    var isAdded = jar1.addCookie(cookie1);
++    assert_equals(isAdded, true);
+     assert_equals(jar1.cookies.length, 1);
+     assert_equals(jar2.cookies.length, 0);
+ 
+-    jar2.addCookie(cookie2);
+-    jar1.deleteCookie('Valid-Cookie-Name-1');
++    isAdded = jar2.addCookie(cookie2);
++    assert_equals(isAdded, true);
++    var isRemoved = jar1.deleteCookie('Valid-Cookie-Name-1');
++    assert_equals(isRemoved, true);
+     assert_equals(jar1.cookies.length, 0);
+     assert_equals(jar2.cookies.length, 1);
+ 

@@ -2,3 +2,5 @@
 *.rpm
 results_phantomjs
 phantomjs
+*.tar.gz
+*.tar.xz
